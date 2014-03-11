@@ -562,11 +562,13 @@ build_rr_graph(INP t_graph_type graph_type,
 		}
 	}
 
-    rr_graph_externals(timing_inf, segment_inf, num_seg_types,
-		       nodes_per_chan, wire_to_ipin_switch, base_cost_type);
 #ifdef CREATE_ECHO_FILES
     dump_rr_graph("rr_graph.echo");
 #endif /* CREATE_ECHO_FILES */
+
+    rr_graph_externals(timing_inf, segment_inf, num_seg_types,
+		       nodes_per_chan, wire_to_ipin_switch, base_cost_type);
+
 
     check_rr_graph(graph_type, num_types, types, nx, ny,
 		   grid, nodes_per_chan, Fs, num_seg_types, num_switches, segment_inf,

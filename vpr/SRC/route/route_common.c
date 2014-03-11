@@ -302,6 +302,8 @@ try_route(int width_fac,
 		   det_routing_arch.wire_to_ipin_switch,
 		   router_opts.base_cost_type, &tmp);
 
+    //printf("index: %d\n", get_rr_node_index(6,2,CHANX, 8, rr_node_indices));
+
 	end = clock();
 	#ifdef CLOCKS_PER_SEC
 		printf("build rr_graph took %g seconds\n", (float)(end - begin) / CLOCKS_PER_SEC);

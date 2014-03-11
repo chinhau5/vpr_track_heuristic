@@ -22,6 +22,7 @@
 #include "SetupVPR.h"
 #include "rr_graph.h"
 #include "pb_type_graph.h"
+#include "mst.h"
 
 /******** Global variables ********/
 int Fs_seed = -1;
@@ -132,6 +133,98 @@ static void InitArch(INP t_arch Arch);
 static void free_pb_type(t_pb_type *pb_type);
 static void free_complex_block_types();
 
+void read_test(const char *filename)
+{
+	FILE *file;
+	int num_nodes;
+	int i;
+	int x, y, pin;
+
+	file = fopen(filename, "r");
+
+	fscanf(file, "%d ", &num_nets);
+
+	clb_net = malloc(sizeof(struct s_net) * num_nets);
+
+	while (!feof(file)) {
+		fscanf(file, "%d ", &num_nodes);
+
+
+
+		for (i = 0; i < num_nodes; i++) {
+			fscanf(file, "%d %d %d ", &x, &y, &pin);
+		}
+	}
+
+	fclose(file);
+}
+
+
+void test(enum e_operation operation,
+		struct s_placer_opts placer_opts,
+		char *place_file,
+		char *net_file,
+		char *arch_file,
+		char *route_file,
+		struct s_annealing_sched annealing_sched,
+		struct s_router_opts router_opts,
+		struct s_det_routing_arch det_routing_arch,
+		t_segment_inf * segment_inf,
+		t_timing_inf timing_inf,
+		t_chan_width_dist chan_width_dist,
+		struct s_model *models)
+{
+
+/* This routine controls the overall placement and routing of a circuit. */
+    char msg[BUFSIZE];
+    int width_fac, inet, i;
+    boolean success, Fc_clipped;
+    float **net_delay, **net_slack;
+    struct s_linked_vptr *net_delay_chunk_list_head;
+    t_ivec **clb_opins_used_locally;	/* [0..num_blocks-1][0..num_class-1] */
+    t_mst_edge **mst = NULL;	/* Make sure mst is never undefined */
+    int max_pins_per_clb;
+	clock_t begin, end;
+
+	width_fac = router_opts.fixed_channel_width;
+
+	    /* If channel width not fixed, use binary search to find min W */
+
+	if(det_routing_arch.directionality == UNI_DIRECTIONAL)
+	{
+		if(width_fac % 2 != 0)
+		{
+			printf
+			("Error: pack_place_and_route.c: given odd chan width (%d) for udsd architecture\n",
+			 width_fac);
+			exit(1);
+		}
+	}
+	/* Other constraints can be left to rr_graph to check since this is one pass routing */
+
+
+	/* Allocate the major routing structures. */
+
+	clb_opins_used_locally = alloc_route_structs();
+
+	if(timing_inf.timing_analysis_enabled)
+	{
+		net_slack =
+		alloc_and_load_timing_graph(timing_inf);
+		net_delay = alloc_net_delay(&net_delay_chunk_list_head, clb_net, num_nets);
+	}
+	else
+	{
+		net_delay = NULL;	/* Defensive coding. */
+		net_slack = NULL;
+	}
+
+	success =
+	try_route(width_fac, router_opts, det_routing_arch,
+		  segment_inf, timing_inf, net_slack, net_delay,
+		  chan_width_dist, clb_opins_used_locally, mst,
+		  &Fc_clipped);
+}
 
 
 /************************* Subroutine definitions ***************************/
@@ -254,6 +347,11 @@ main(int argc,
 	    init_graphics("VPR:  Versatile Place and Route for FPGAs");
 	    alloc_draw_structs();
 	}
+
+    test(Operation, PlacerOpts, FileNameOpts.PlaceFile,
+		    FileNameOpts.NetFile, FileNameOpts.ArchFile, FileNameOpts.RouteFile,
+		    AnnealSched, RouterOpts, RoutingArch,
+			Segments, Timing, Arch.Chans, Arch.models);
 
     /* Do placement and routing */
     place_and_route(Operation, PlacerOpts, FileNameOpts.PlaceFile,

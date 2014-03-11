@@ -761,6 +761,11 @@ get_unidir_opin_connections(INP int chan,
 	    Fc = 2 * min(num_inc_muxes, num_dec_muxes);
 	}
 
+    //assert(inc_muxes == dec_muxesFc_ofs[chan][seg] == 0 );
+    if (Fc_ofs[chan][seg] == 0) {
+    	num_edges = 1;
+    }
+
     /* Assign tracks to meet Fc demand */
     num_edges = 0;
     for(iconn = 0; iconn < (Fc / 2); ++iconn)
